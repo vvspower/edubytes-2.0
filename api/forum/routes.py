@@ -12,63 +12,21 @@ import sys
 import os
 from api import db
 import jwt
-sys.path.append(os.path.abspath("../api"))
-sys.path.append(os.path.abspath('../main'))
+from .helpers.exceptions import *
+from .helpers.functions import *
+sys.path.append(os.path.abspath("../../api"))
+sys.path.append(os.path.abspath('../../main'))
 
 
 forum = Blueprint('forum', __name__)
 JWT_SECRET_KEY = "d445191d82cd77c696de"
 
 
-# EXCEPTIONS
-
-class EmptyField(Exception):
-    pass
-
-
-class StringTooShortException(Exception):
-    pass
-
-
-class StringTooLongException(Exception):
-    pass
-
-
-class Unauthorized(Exception):
-    pass
-
-
-class Forbidden(Exception):
-    pass
-
-
 # HELPER
-
-def content_check(content):
-    if content["target"]:
-        if content["content"] == "" or content["target"] == []:
-            raise EmptyField("Please do not leave any field empty")
-    if len(content["content"]) > 5000:
-        raise StringTooLongException(
-            "Content is too long. Please keep it below 5000 characters")
-    if len(content["content"]) < 5:
-        raise StringTooShortException(
-            "Content is too short. Please keep it above 5 characters")
-
-
-def add_likes(posts):
-    for item in posts:
-        likes = list(db.forum_likes.find({"post": str(item["_id"])}))
-        print(likes)
-        for like in likes:
-            del like["_id"]
-        item["likes"] = likes
-    return posts
 
 
 try:
-    from .config.models import forum_post_model
-    from .config.models import forum_reply_model
+    from .models import forum_post_model, forum_reply_model
 
     db.create_collection('forum')
     db.create_collection('forum_replies')

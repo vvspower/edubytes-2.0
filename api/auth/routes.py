@@ -1,93 +1,33 @@
-from wsgiref.validate import validator
+# from .helpers import send_email
+from .helpers.functions import check_email_exists, check_username_exists, send_email, initialize_user, get_friends
+from .helpers.exceptions import RequiredExists, EmptyField, HTTP_HEADER_MISSING
 from xml.dom import NotFoundErr
 from api import db
 import os
 import sys
-import requests
-import smtplib
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
 from bson import ObjectId
 from flask import Blueprint, request, Response
 import jwt
 import bcrypt
-import datetime
 import time
 import datetime
 import json
-sys.path.append(os.path.abspath("../api"))
-sys.path.append(os.path.abspath('../main'))
+sys.path.append(os.path.abspath("../../api"))
+sys.path.append(os.path.abspath('../../main'))
 
 auth = Blueprint('auth', __name__)
 
 JWT_SECRET_KEY = "d445191d82cd77c696de"
-EMAIL = "business.valpal@gmail.com"
-APP_PASSWORD = "gosbnnqaciwliteg"
 
 
 try:
-    from .config.models import user_model
+    from .models import user_model
     db.create_collection("users")
     db.command("collMod", "users", validator=user_model)
     db.create_collection('dead_tokens')
 
 except Exception as ex:
     print(ex)
-
-
-# EXEPTIONS
-
-class RequiredExists(Exception):
-    pass
-
-
-class EmptyField(Exception):
-    pass
-
-
-class HTTP_HEADER_MISSING(Exception):
-    pass
-
-
-# HELPERS
-
-def check_email_exists(email):
-    dbResponse = db.users.find_one({"email": email})
-    if dbResponse != None:
-        raise RequiredExists("Email already exists")
-
-
-def check_username_exists(username):
-    dbResponse = db.users.find_one({"username": username})
-    if dbResponse != None:
-        raise RequiredExists("username already exists")
-
-
-def send_email(email, token):
-
-    message = MIMEMultipart()
-    message["from"] = "ValPal"
-    message["to"] = email
-    message["subject"] = "Email Verification"
-
-    message.attach(MIMEText(f"""
-Hi {email},
-
-We recieved your request for creating an account
-
-please click on this link to verfiy your account (link of website)  {token}
-
-Code will expire after 15 minutes
-
-Thanks,
-EduBytes""", 'plain'))
-
-    with smtplib.SMTP(host="smtp.gmail.com", port=587) as smtp:
-        smtp.ehlo()
-        smtp.starttls()
-        smtp.login(EMAIL, APP_PASSWORD)
-        smtp.send_message(message)
-        print("Sent")
 
 
 # ROUTES
@@ -131,9 +71,12 @@ def sign_up():
 # VERIFY USER
 
 
-@auth.route('/sign-up/verify/<token>', methods=["POST"])
-def verify_user(token):
+@auth.route('/sign-up/verify', methods=["POST"])
+def verify_user():
     try:
+
+        token = request.headers["token"]
+
         dbResponse = db.dead_tokens.find_one({"token": token})
         if dbResponse == None:
             db.dead_tokens.insert_one({"token": token})
@@ -143,27 +86,8 @@ def verify_user(token):
             presentDate = datetime.datetime.now()
             print(payload["password"].encode('utf-8'))
 
-            # day = today.strftime("%d/%m/%Y")
-            user = {
-                "username": payload["username"],
-                "email": payload["email"],
-                "password": payload["password"].encode('utf-8'),
-                "created": f"{time.mktime(presentDate.timetuple())}",
-                "admin": False,
-                "partnerd": False,
-                "details": {
-                    "bio": None,
-                    "pfp": None,
-                    "verified": False,
-                    "education": {
-                        "Institute": None,  # string
-                        "University": None,  # bool
-                        "College": None,  # bool,
-                        "Subjects": []  # array of strings
-                    }
-                },
-
-            }
+            user = initialize_user(payload)
+            print(user)
 
             dbResponse = db.users.insert_one(user)
             payload = {'user_id': str(dbResponse.inserted_id)}
@@ -228,19 +152,25 @@ def check_user(username):
                 raise HTTP_HEADER_MISSING("Auth-token missing")
             payload = jwt.decode(
                 jwt=token,  key=JWT_SECRET_KEY, algorithms=['HS256'])
-            dbResponse = db.users.find_one(
+            user = db.users.find_one(
                 {"_id": ObjectId(payload["user_id"])})
-            dbResponse['_id'] = str(dbResponse['_id'])
-            del dbResponse["password"]
+            user['_id'] = str(user['_id'])
+            del user["password"]
+
         else:
-            dbResponse = db.users.find_one({"username": username})
-            if dbResponse == None:
+            user = db.users.find_one({"username": username})
+            if user == None:
                 raise NotFoundErr("User not found")
 
-            dbResponse['_id'] = str(dbResponse['_id'])
-            del dbResponse["password"]
+            user['_id'] = str(user['_id'])
+            del user["password"]
 
-        return Response(response=json.dumps({"data": dbResponse, "success": True}), status=200, mimetype="applcation/json")
+            print(user["username"])
+
+        friends = get_friends(user["username"])
+        user["friends"] = friends
+
+        return Response(response=json.dumps({"data": user, "success": True}), status=200, mimetype="applcation/json")
     except NotFoundErr as ex:
         return Response(response=json.dumps({"data": ex.args[0], "success": False}), status=404, mimetype="applcation/json")
     except HTTP_HEADER_MISSING as ex:
@@ -264,7 +194,7 @@ def update_user():
         payload = jwt.decode(token, JWT_SECRET_KEY, algorithms=['HS256'])
 
         dbResponse = db.users.update_one({"_id": ObjectId(
-            payload["user_id"])}, {"$set": {"details": content["details"]}})
+            payload["user_id"])}, {"$set": {"details": content["details"], "education": content["education"]}})
         if dbResponse.modified_count == 1:
             return Response(response=json.dumps({"data": "Updated", "success": True}), status=200, mimetype="applcation/json")
         else:

@@ -23,10 +23,14 @@ def create_app():
     app = Flask(__name__)
     CORS(app)
 
-    from .auth import auth
-    from .forum import forum
+    from .auth.routes import auth
+    from .forum.routes import forum
+    from .suggestions.routes import suggestions
+    from .friend_sys.routes import friend
 
     app.register_blueprint(auth, url_prefix='/auth')
     app.register_blueprint(forum, url_prefix='/community/forums')
+    app.register_blueprint(suggestions, url_prefix='/suggestions')
+    app.register_blueprint(friend, url_prefix='/friend')
 
     return app
