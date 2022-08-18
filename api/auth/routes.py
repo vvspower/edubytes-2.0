@@ -21,9 +21,12 @@ JWT_SECRET_KEY = "d445191d82cd77c696de"
 
 
 try:
-    from .models import user_model
+    from .models import user_model, notification_model
     db.create_collection("users")
     db.command("collMod", "users", validator=user_model)
+    db.create_collection("notifications")
+    db.command("collMod", "notifications", validator=notification_model)
+
     db.create_collection('dead_tokens')
 
 except Exception as ex:

@@ -44,6 +44,7 @@ def get_suggested_posts_according_to_post(post_id):
             for word_to_check in check_words:
                 if word_to_find == word_to_check:
                     words_matched = words_matched + 1
+        print(words_matched)
 
         if words_matched >= 5:
             matched_posts.append(post)

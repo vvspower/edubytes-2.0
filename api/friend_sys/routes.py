@@ -5,6 +5,7 @@ import jwt
 import sys
 import os
 from api import db
+from ..events.notifications.functions import on_sending_friend_request, on_del_or_accept_friend_req
 sys.path.append(os.path.abspath("../../api"))
 sys.path.append(os.path.abspath('../../main'))
 
@@ -55,6 +56,8 @@ def send_friend_request(username):
         }
 
         dbResponse = db.friend_requests.insert_one(friend)
+
+        on_sending_friend_request(reciever_user, user)
         return Response(response=json.dumps({"data": "Friend request sent", "success": True}), status=200, mimetype="application/json")
     except jwt.InvalidSignatureError as ex:
         return Response(response=json.dumps({"data": ex.args[0], "success": False}), status=400, mimetype="application/json")
@@ -84,6 +87,7 @@ def delete_friend_request(username):
             {"sender": user, "recipient": reciever_user})
 
         if dbResponse.deleted_count == 1:
+            on_del_or_accept_friend_req(reciever_user, user)
             return Response(response=json.dumps({"data": "Friend request deleted", "success": True}), status=200, mimetype="application/json")
         else:
             return Response(response=json.dumps({"data": "No friend request was sent", "success": False}), status=200, mimetype="application/json")
@@ -118,6 +122,7 @@ def accept_friend_req(username):
             {"sender": user, "recipient": reciever_user})
 
         if inserted_response.inserted_id is not None and deleted_response.deleted_count == 1:
+            on_del_or_accept_friend_req(reciever_user, user)
             return Response(response=json.dumps({"data": "Friend added", "success": True}), status=200, mimetype="application/json")
         else:
             return Response(response=json.dumps({"data": "Something went wrong", "success": True}), status=500, mimetype="application/json")

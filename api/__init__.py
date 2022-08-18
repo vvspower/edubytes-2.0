@@ -10,6 +10,7 @@ try:
 
     mongo = pymongo.MongoClient(MONGO_CONNECTION_STRING)
     db = mongo.main
+    db_events = mongo.events
     print("Connected to MongoDB")
     mongo.server_info()
 

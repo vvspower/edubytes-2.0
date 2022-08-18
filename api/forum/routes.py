@@ -1,5 +1,6 @@
 from ast import excepthandler
 from http.client import UNAUTHORIZED
+from ..events.notifications.functions import on_being_mentioned, on_getting_reply, on_post_like
 from re import L
 from telnetlib import EC
 from xml.dom import NotFoundErr
@@ -67,6 +68,9 @@ def post():
         }
 
         dbResponse = db.forum.insert_one(data)
+
+        on_being_mentioned(
+            user["username"], dbResponse.inserted_id, content["content"])
         return Response(response=json.dumps({"data": str(dbResponse.inserted_id), "success": True}), status=200, mimetype="application/json")
     except jwt.exceptions.DecodeError as ex:
         return Response(response=json.dumps({"data": "Please use a valid form of JWT token", "success": False}), status=400, mimetype="applcation/json")
@@ -218,6 +222,8 @@ def get_post_from_username(username):
         return Response(response=json.dumps({"data": ex.args[0], "success": False}), status=500, mimetype="application/json")
 
 
+# GET TOP POSTS
+
 @forum.route("/post/top/<target>", methods=["GET"])
 def get_top_posts(target):
     try:
@@ -265,6 +271,21 @@ def get_top_posts(target):
         print(ex)
         return Response(response=json.dumps({"data": ex.args[0], "success": False}), status=500, mimetype="application/json")
 
+# FILTER TAGS
+
+
+@forum.route("/post/filter/<target>/<tag>", methods=["GET"])
+def filter_post_using_tags(target, tag):
+    try:
+        posts = list(db.forum.find(
+            {"tags": {"$all": [tag]}, "target": target}))
+        for post in posts:
+            post["_id"] = str(post["_id"])
+        print(posts)
+        return Response(response=json.dumps({"data": posts, "success": True}), status=200, mimetype="applcation/json")
+    except Exception as ex:
+        return Response(response=json.dumps({"data": ex.args[0], "success": False}), status=500, mimetype="application/json")
+
 
 # ? LIKE API
 
@@ -287,6 +308,8 @@ def like_post(id, type):
             "post": id,
             "type": type  # haha, sad, angry
         }
+
+        on_post_like(user["username"], id, type)
 
         dbResponse = db.forum_likes.insert_one(data)
         return Response(response=json.dumps({"data": "Liked", "success": True}), status=200, mimetype="applcation/json")
@@ -385,6 +408,9 @@ def reply_to_post(id):
         }
 
         dbResponse = db.forum_replies.insert_one(data)
+        on_getting_reply(user["username"], id, content["content"])
+        on_being_mentioned(user["username"], id, content["content"])
+
         return Response(response=json.dumps({"data": str(dbResponse.inserted_id), "success": True}), status=200, mimetype="applcation/json")
     except jwt.exceptions.DecodeError as ex:
         return Response(response=json.dumps({"data": "Please use a valid form of JWT token", "success": False}), status=400, mimetype="applcation/json")

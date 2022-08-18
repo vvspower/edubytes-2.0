@@ -39,3 +39,31 @@ user_model = {
         }
     }
 }
+
+
+notification_model = {
+    "$jsonSchema": {
+        "bsonType": "object",
+        "required": ["for", "content", "created", "redirect"],
+        "properties": {
+            "for": {
+                "bsonType": "string",
+                "description": "must be a string and is required",
+                "uniqueItems": True
+            },
+            "content": {
+                "bsonType": "string",
+                "description": "must be a string and is required"
+            },
+            "created": {
+                "bsonType": "string",
+                'description': "must be a string and is required",
+            },
+            "redirect": {
+                "bsonType": "string",
+                "description": "must be a string and is required",
+
+            }
+        }
+    }
+}
