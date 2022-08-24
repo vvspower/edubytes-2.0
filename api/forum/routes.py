@@ -15,6 +15,8 @@ from api import db
 import jwt
 from .helpers.exceptions import *
 from .helpers.functions import *
+import calendar
+import time
 sys.path.append(os.path.abspath("../../api"))
 sys.path.append(os.path.abspath('../../main'))
 
@@ -54,13 +56,13 @@ def post():
             jwt=token,  key=JWT_SECRET_KEY, algorithms=['HS256'])
         user = db.users.find_one({"_id": ObjectId(payload["user_id"])})
 
-        presentDate = datetime.datetime.now()
+        gmt = time.gmtime()
 
         data = {
             "username": user["username"],
             "content": content["content"],
             "image": content["image"],
-            "created": f"{time.mktime(presentDate.timetuple())}",
+            "created": f"{calendar.timegm(gmt)}",
             "target": content["target"],  # target = "IBA"
             # subject = "Computer Science" or could by "General" for general subject
             "subject": content["subject"],
@@ -196,6 +198,13 @@ def get_posts_from_target(target, subject):
             user = db.users.find_one({"username": item["username"]})
             item["user_pfp"] = user["details"]["pfp"]
             item["_id"] = str(item["_id"])
+            likes = list(db.forum_likes.find({"post": str(item["_id"])}))
+            for like in likes:
+                like["user_pfp"] = db.users.find_one({"username": like["username"]})[
+                    "details"]["pfp"]
+                del like["_id"]
+                del like["post"]
+            item["likes"] = likes
         return Response(response=json.dumps({"data": posts, "success": True}), status=200, mimetype="applcation/json")
     except Exception as ex:
         return Response(response=json.dumps({"data": ex.args[0], "success": False}), status=500, mimetype="application/json")
@@ -229,41 +238,21 @@ def get_top_posts(target):
     try:
         case = "today"
         return_list = []
-        presentDate = datetime.datetime.now()
         posts = list(db.forum.find({"target": target}))
         posts = add_likes(posts)
 
-        date_filter = time.mktime(presentDate.timetuple()) - 86400
-
         # finds posts which were created between today and 24 hours ago
-        filtered_today = list(filter(lambda item: float(
-            item["created"]) > date_filter, posts))
-
+        filtered_today = filter_between_today_and_24h_ago(posts)
         # finds posts which were created 24 hours ago and before
-        filtered_yesterday = list(filter(
-            lambda item: float(item["created"]) < date_filter, posts))
+        filtered_yesterday = filter_between_24h_ago_and_before(posts)
 
-        filtered_today = sorted(
-            filtered_today, key=lambda d: len(d["likes"]), reverse=True)[:2]
+        filtered_today = sort_posts_by_likes(filtered_today)
+        filtered_yesterday = sort_posts_by_likes(filtered_yesterday)
 
-        filtered_yesterday = sorted(
-            filtered_yesterday, key=lambda d: len(d["likes"]), reverse=True)[:2]
+        # calculated case
+        return_list, case = calculate_case(
+            filtered_today, filtered_yesterday, case)
 
-        if len(filtered_today) == 1:
-            case = "both"
-            return_list.append(filtered_today[0])
-            return_list.append(filtered_yesterday[0])
-        if len(filtered_today) == 0:
-            case = "yesterday"
-            return_list = filtered_yesterday
-        else:
-            return_list = filtered_today
-
-        for item in return_list:
-            item["_id"] = str(item["_id"])
-            print("HELLO")
-
-        # TODO : OPTIMIZE CODE
         print(return_list)
         return Response(response=json.dumps({"data": {"case": case, "sorted": return_list}, "success": True}), status=200, mimetype="applcation/json")
 
@@ -387,7 +376,6 @@ def check_if_liked_post(id):
 @forum.route("/reply/<id>", methods=["POST"])
 def reply_to_post(id):
     try:
-        presentDate = datetime.datetime.now()
         content = request.get_json()
         # content_check(content)
 
@@ -399,12 +387,14 @@ def reply_to_post(id):
         if db.forum.find_one({"_id": ObjectId(id)}) == None:
             raise NotFoundErr("Post not found")
 
+        gmt = time.gmtime()
+
         data = {
             "username": user["username"],
             "reply_to": id,
             "image": content["image"],
             "content": content["content"],
-            "created": f"{time.mktime(presentDate.timetuple())}"
+            "created": f"{calendar.timegm(gmt)}"
         }
 
         dbResponse = db.forum_replies.insert_one(data)

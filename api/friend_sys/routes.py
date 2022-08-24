@@ -151,9 +151,7 @@ def remove_friend(username):
         dbResponse = db.friend.delete_one(
             {"$or": [{"user_1": user_1, "user_2": user_2}, {"user_1": user_2, "user_2": user_1}]})
 
-        # dbResponse = db.friend.delete_one({"user_1": user_1, "user_2": user_2})
-        # if dbResponse.deleted_count == 0:
-        #     db.friend.delete_one({"user_1": user_2, "user_2": user_1})
+    
         if dbResponse.deleted_count == 1:
             return Response(response=json.dumps({"data": "Friend removed", "success": True}), status=200, mimetype="application/json")
         else:

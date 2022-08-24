@@ -2,6 +2,8 @@ import sys
 import os
 from api import db
 from .exceptions import *
+import calendar
+import time
 
 sys.path.append(os.path.abspath("../api"))
 sys.path.append(os.path.abspath('../main'))
@@ -27,3 +29,38 @@ def add_likes(posts):
             del like["_id"]
         item["likes"] = likes
     return posts
+
+
+def sort_posts_by_likes(post):
+    sorted_post = sorted(post, key=lambda d: len(d["likes"]), reverse=True)[:2]
+    return sorted_post
+
+
+def filter_between_today_and_24h_ago(posts):
+    gmt = time.gmtime()
+    return list(filter(lambda item: int(
+        item["created"]) > calendar.timegm(gmt), posts))
+
+
+def filter_between_24h_ago_and_before(posts):
+    gmt = time.gmtime()
+    return list(filter(lambda item: int(
+        item["created"]) > calendar.timegm(gmt), posts))
+
+
+def calculate_case(today_posts, yesterday_posts, case):
+    return_list = []
+    if len(today_posts) == 1:
+        case = "both"
+        return_list.append(today_posts[0])
+        return_list.append(yesterday_posts[0])
+    if len(today_posts) == 0:
+        case = "yesterday"
+        return_list = yesterday_posts
+    else:
+        return_list = today_posts
+    for item in return_list:
+        item["_id"] = str(item["_id"])
+        print("HELLO")
+
+    return return_list, case

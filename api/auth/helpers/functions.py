@@ -7,6 +7,7 @@ import smtplib
 from .exceptions import *
 import datetime
 import time
+import calendar
 sys.path.append(os.path.abspath("../../api"))
 sys.path.append(os.path.abspath('../../main'))
 
@@ -57,23 +58,23 @@ def check_username_exists(username):
 
 
 def initialize_user(payload):
-    presentDate = datetime.datetime.now()
+    gmt = time.gmtime()
     user = {
         "username": payload["username"],
         "email": payload["email"],
         "password": payload["password"].encode('utf-8'),
-        "created": f"{time.mktime(presentDate.timetuple())}",
+        "created": f"{calendar.timegm(gmt)}",
         "admin": False,
         "partnerd": False,
         "details": {
-            "bio": None,
-            "pfp": None,
+            "bio": "",
+            "pfp": "",
             "verified": False
         },
         "education": {
-            "institute": None,  # string
-            "university": None,  # bool
-            "college": None,  # bool,
+            "institute": "",  # string
+            "university": False,  # bool
+            "college": False,  # bool,
             "subjects": [],  # array of strings
         }
     }
