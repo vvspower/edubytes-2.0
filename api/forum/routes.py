@@ -205,7 +205,8 @@ def get_posts_from_target(target, subject):
                 del like["_id"]
                 del like["post"]
             item["likes"] = likes
-        return Response(response=json.dumps({"data": posts, "success": True}), status=200, mimetype="applcation/json")
+        sorted_post = sorted(posts, key=lambda d: d["created"], reverse=True)
+        return Response(response=json.dumps({"data": sorted_post, "success": True}), status=200, mimetype="applcation/json")
     except Exception as ex:
         return Response(response=json.dumps({"data": ex.args[0], "success": False}), status=500, mimetype="application/json")
 
@@ -240,9 +241,12 @@ def get_top_posts(target):
         return_list = []
         posts = list(db.forum.find({"target": target}))
         posts = add_likes(posts)
+        print("start")
 
         # finds posts which were created between today and 24 hours ago
+
         filtered_today = filter_between_today_and_24h_ago(posts)
+        print(filtered_today)
         # finds posts which were created 24 hours ago and before
         filtered_yesterday = filter_between_24h_ago_and_before(posts)
 
@@ -252,6 +256,13 @@ def get_top_posts(target):
         # calculated case
         return_list, case = calculate_case(
             filtered_today, filtered_yesterday, case)
+
+        for item in return_list:
+            pfp = db.users.find_one({"username": item["username"]})[
+                "details"]["pfp"]
+
+            print(pfp)
+            item["user_pfp"] = pfp
 
         print(return_list)
         return Response(response=json.dumps({"data": {"case": case, "sorted": return_list}, "success": True}), status=200, mimetype="applcation/json")
@@ -401,7 +412,11 @@ def reply_to_post(id):
         on_getting_reply(user["username"], id, content["content"])
         on_being_mentioned(user["username"], id, content["content"])
 
-        return Response(response=json.dumps({"data": str(dbResponse.inserted_id), "success": True}), status=200, mimetype="applcation/json")
+        return_data = data
+        return_data["_id"] = str(dbResponse.inserted_id)
+        return_data["user_pfp"] = user["details"]["pfp"]
+
+        return Response(response=json.dumps({"data": return_data, "success": True}), status=200, mimetype="applcation/json")
     except jwt.exceptions.DecodeError as ex:
         return Response(response=json.dumps({"data": "Please use a valid form of JWT token", "success": False}), status=400, mimetype="applcation/json")
     except jwt.InvalidSignatureError as ex:

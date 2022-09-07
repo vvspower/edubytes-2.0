@@ -38,14 +38,25 @@ def sort_posts_by_likes(post):
 
 def filter_between_today_and_24h_ago(posts):
     gmt = time.gmtime()
-    return list(filter(lambda item: int(
-        item["created"]) > calendar.timegm(gmt), posts))
+    filtered = []
+    for item in posts:
+        print(item["created"], calendar.timegm(gmt))
+        if float(item["created"]) > calendar.timegm(gmt):
+            filtered.append(item)
+
+    return filtered
 
 
 def filter_between_24h_ago_and_before(posts):
     gmt = time.gmtime()
-    return list(filter(lambda item: int(
-        item["created"]) > calendar.timegm(gmt), posts))
+    gmt = time.gmtime()
+    filtered = []
+    for item in posts:
+        print(item["created"], calendar.timegm(gmt))
+        if float(item["created"]) < calendar.timegm(gmt):
+            filtered.append(item)
+
+    return filtered
 
 
 def calculate_case(today_posts, yesterday_posts, case):
