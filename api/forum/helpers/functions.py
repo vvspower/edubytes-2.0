@@ -24,7 +24,6 @@ def content_check(content):
 def add_likes(posts):
     for item in posts:
         likes = list(db.forum_likes.find({"post": str(item["_id"])}))
-        print(likes)
         for like in likes:
             del like["_id"]
         item["likes"] = likes
@@ -33,6 +32,11 @@ def add_likes(posts):
 
 def sort_posts_by_likes(post):
     sorted_post = sorted(post, key=lambda d: len(d["likes"]), reverse=True)[:2]
+    return sorted_post
+
+
+def sort_posts_by_date(post):
+    sorted_post = sorted(post, key=lambda d: d["created"], reverse=True)
     return sorted_post
 
 

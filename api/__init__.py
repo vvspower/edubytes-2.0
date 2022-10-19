@@ -28,10 +28,12 @@ def create_app():
     from .forum.routes import forum
     from .suggestions.routes import suggestions
     from .friend_sys.routes import friend
+    from .events.notifications.routes import notification
 
     app.register_blueprint(auth, url_prefix='/auth')
     app.register_blueprint(forum, url_prefix='/community/forums')
     app.register_blueprint(suggestions, url_prefix='/suggestions')
     app.register_blueprint(friend, url_prefix='/friend')
+    app.register_blueprint(notification, url_prefix='/notifications')
 
     return app

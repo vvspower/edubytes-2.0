@@ -48,10 +48,27 @@ def get_suggested_posts_according_to_post(post_id):
 
         if words_matched >= 5:
             matched_posts.append(post)
+
+    index = 0
+    result = []
+
     for post in matched_posts:
         post["_id"] = str(post["_id"])
+        if post["_id"] != post_id:
+            result.append(post)
 
-    return matched_posts
+    for post in result:
+        pfp = db.users.find_one({"username": post["username"]})[
+            "details"]["pfp"]
+        print(pfp,  "here")
+        post["user_pfp"] = pfp
+
+    # reason for making two different loops and lists is because there was some bug due to which it wasnt executing all of the
+    # code in loop, so i divided in two different. second list for clarity
+
+    print(result)
+
+    return result
 
 
 def get_suggested_users_using_education(username):

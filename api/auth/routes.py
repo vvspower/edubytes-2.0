@@ -22,7 +22,6 @@ auth = Blueprint('auth', __name__)
 JWT_SECRET_KEY = "d445191d82cd77c696de"
 
 
-
 try:
     from .models import user_model, notification_model
     db.create_collection("users")
@@ -145,7 +144,7 @@ def login_user():
 
 # GET USER
 
-@auth.route("/user/<username>/", methods=['GET'])
+@auth.route("/user/<username>", methods=['GET'])
 # USE IF GETTING USER USING AUTH TOKEN ONLY
 @auth.route('/user', methods=['GET'], defaults={'username': None})
 def check_user(username):

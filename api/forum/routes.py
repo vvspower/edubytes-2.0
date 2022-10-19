@@ -222,9 +222,19 @@ def get_post_from_username(username):
             raise NotFoundErr("user does not exist")
         for item in posts:
             user = db.users.find_one({"username": item["username"]})
+            print(str(item["_id"]))
+            likes = list(db.forum_likes.find({"post": str(item["_id"])}))
+            for like in likes:
+                del like["_id"]
+                del like["post"]
+                like["user_pfp"] = db.users.find_one({"username": like["username"]})[
+                    "details"]["pfp"]
+
+            print(likes)
+            item["likes"] = likes
             item["user_pfp"] = user["details"]["pfp"]
             item["_id"] = str(item["_id"])
-            item["_id"] = str(item["_id"])
+            posts = sort_posts_by_date(posts)
         return Response(response=json.dumps({"data": posts, "success": True}), status=200, mimetype="applcation/json")
     except NotFoundErr as ex:
         return Response(response=json.dumps({"data": ex.args[0], "success": False}), status=404, mimetype="application/json")
@@ -258,6 +268,12 @@ def get_top_posts(target):
             filtered_today, filtered_yesterday, case)
 
         for item in return_list:
+            for user in item["likes"]:
+                del user["post"]
+                user["user_pfp"] = db.users.find_one({"username": user["username"]})[
+                    "details"]["pfp"]
+                pass
+
             pfp = db.users.find_one({"username": item["username"]})[
                 "details"]["pfp"]
 
@@ -309,7 +325,8 @@ def like_post(id, type):
             "type": type  # haha, sad, angry
         }
 
-        on_post_like(user["username"], id, type)
+        if user["username"] != db.forum.find_one({"_id": ObjectId(id)})["username"]:
+            on_post_like(user["username"], id, type)
 
         dbResponse = db.forum_likes.insert_one(data)
         return Response(response=json.dumps({"data": "Liked", "success": True}), status=200, mimetype="applcation/json")

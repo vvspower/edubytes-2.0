@@ -45,19 +45,22 @@ def send_friend_request(username):
         reciever_user = username
 
         if user == reciever_user:
-            return Forbidden("Cannot add friend to yourself")
+            raise Forbidden("Cannot add friend to yourself")
 
         if db.friend_requests.find_one({"sender": user, "recipient": reciever_user}) is not None:
-            return Unauthorized("friend request already sent")
+            raise Unauthorized("friend request already sent")
+        else:
+            on_sending_friend_request(reciever_user, user)
+            friend = {
+                "sender": user,
+                "recipient": reciever_user
+            }
 
-        friend = {
-            "sender": user,
-            "recipient": reciever_user
-        }
+        if db.friend.find_one({"$or": [{"user_1": user, "user_2": reciever_user}, {"user_1": reciever_user, "user_2": user}]}) != None:
+            raise Forbidden("you are already friends")
 
         dbResponse = db.friend_requests.insert_one(friend)
 
-        on_sending_friend_request(reciever_user, user)
         return Response(response=json.dumps({"data": "Friend request sent", "success": True}), status=200, mimetype="application/json")
     except jwt.InvalidSignatureError as ex:
         return Response(response=json.dumps({"data": ex.args[0], "success": False}), status=400, mimetype="application/json")
@@ -65,6 +68,8 @@ def send_friend_request(username):
         return Response(response=json.dumps({"data": "Please use a valid form of JWT token", "success": False}), status=400, mimetype="applcation/json")
     except Unauthorized as ex:
         return Response(response=json.dumps({"data": ex.args[0], "success": False}), status=400, mimetype="applcation/json")
+    except Forbidden as ex:
+        return Response(response=json.dumps({"data": ex.args[0], "success": False}), status=403, mimetype="applcation/json")
     except Exception as ex:
         print(ex)
         return Response(response=json.dumps({"data": ex.args[0], "success": False}), status=500, mimetype="application/json")
@@ -112,9 +117,10 @@ def accept_friend_req(username):
         reciever_user = db.users.find_one({"_id": ObjectId(payload["user_id"])})[
             "username"]
         user = username
+        print(username)
 
         if user == reciever_user:
-            return Forbidden("Cannot add friend to yourself")
+            raise Forbidden("Cannot add friend to yourself")
 
         inserted_response = db.friend.insert_one(
             {"user_1": username, "user_2": reciever_user})
@@ -125,7 +131,7 @@ def accept_friend_req(username):
             on_del_or_accept_friend_req(reciever_user, user)
             return Response(response=json.dumps({"data": "Friend added", "success": True}), status=200, mimetype="application/json")
         else:
-            return Response(response=json.dumps({"data": "Something went wrong", "success": True}), status=500, mimetype="application/json")
+            return Response(response=json.dumps({"data": "Something went wrong", "success": True}), status=400, mimetype="application/json")
     except jwt.InvalidSignatureError as ex:
         return Response(response=json.dumps({"data": ex.args[0], "success": False}), status=400, mimetype="application/json")
     except jwt.exceptions.DecodeError as ex:
@@ -151,7 +157,6 @@ def remove_friend(username):
         dbResponse = db.friend.delete_one(
             {"$or": [{"user_1": user_1, "user_2": user_2}, {"user_1": user_2, "user_2": user_1}]})
 
-    
         if dbResponse.deleted_count == 1:
             return Response(response=json.dumps({"data": "Friend removed", "success": True}), status=200, mimetype="application/json")
         else:
@@ -179,6 +184,9 @@ def get_friend_request():
 
         friend_requests = list(db.friend_requests.find({"recipient": user}))
         for req in friend_requests:
+            pfp = db.users.find_one({"username": req["sender"]})[
+                "details"]["pfp"]
+            req["sender_pfp"] = pfp
             del req["_id"]
         return Response(response=json.dumps({"data": friend_requests, "success": True}), status=200, mimetype="application/json")
 
