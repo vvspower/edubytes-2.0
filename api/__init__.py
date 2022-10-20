@@ -11,6 +11,7 @@ try:
     mongo = pymongo.MongoClient(MONGO_CONNECTION_STRING)
     db = mongo.main
     db_events = mongo.events
+    db_marketplace = mongo.marketplace
     print("Connected to MongoDB")
     mongo.server_info()
 
@@ -29,11 +30,13 @@ def create_app():
     from .suggestions.routes import suggestions
     from .friend_sys.routes import friend
     from .events.notifications.routes import notification
+    from .resources.routes import resources
 
     app.register_blueprint(auth, url_prefix='/auth')
     app.register_blueprint(forum, url_prefix='/community/forums')
     app.register_blueprint(suggestions, url_prefix='/suggestions')
     app.register_blueprint(friend, url_prefix='/friend')
     app.register_blueprint(notification, url_prefix='/notifications')
+    app.register_blueprint(resources, url_prefix='/resources')
 
     return app
