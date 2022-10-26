@@ -32,6 +32,10 @@ resource_model = {
                 "bsonType": "string",
                 "description": "must be a string and is required"
             },
+            "subject": {
+                "bsonType": "subject",
+                "description": "must be a string and is required"
+            },
             "link": {
                 "bsonType": "array",
                 "description": "must be a array and is required"
