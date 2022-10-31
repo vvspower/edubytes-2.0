@@ -108,7 +108,6 @@ def delete_resource(id):
         return Response(response=json.dumps({"data": ex.args[0]}), status=500, mimetype="application/json")
 
 
-
 # get all resources
 
 

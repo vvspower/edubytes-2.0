@@ -15,12 +15,13 @@ def initialize_resource(content, username):
         "username": username,
         "resource_title": content["resource_title"],
         "resource_type": content["resource_type"],
+        "preview_image": content["preview_image"],
         "price": content["price"],
         "rating": content["rating"],
         "file_type": content["file_type"],
         # will be an array, single element in array in pdf, or else multiple links of images
         "subject": content["subject"],
-        'link': content["link"],
+        'link': content["link"],  # this will be a list
         "created": content["created"],
     }
     return resource
