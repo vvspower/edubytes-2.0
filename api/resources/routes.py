@@ -49,9 +49,9 @@ def upload_resource():
         user = db.users.find_one({"_id": ObjectId(payload["user_id"])})[
             "username"]
         resource = initialize_resource(
-            content=content, username=user["username"])
+            content=content, username=user)
         db_response = db_marketplace.resources.insert_one(resource)
-        return Response(response=json.dumps({"data": resource}), status=200, mimetype="application/json")
+        return Response(response=json.dumps({"data": "uploaded"}), status=200, mimetype="application/json")
     except jwt.InvalidSignatureError as ex:
         return Response(response=json.dumps({"data": ex.args[0], "success": False}), status=400, mimetype="application/json")
     except jwt.exceptions.DecodeError as ex:
@@ -59,6 +59,7 @@ def upload_resource():
     except EmptyField as ex:
         return Response(response=json.dumps({"data": ex.args[0], "success": False}), status=400, mimetype="application/json")
     except Exception as ex:
+        print(ex)
         return Response(response=json.dumps({"data": ex.args[0]}), status=500, mimetype="application/json")
 
 
