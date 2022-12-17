@@ -4,6 +4,7 @@ import sys
 import os
 from api import db
 from bson import ObjectId
+
 sys.path.append(os.path.abspath("../api"))
 sys.path.append(os.path.abspath('../main'))
 # suggested posts
@@ -83,6 +84,7 @@ def get_suggested_users_using_education(username):
     for similar_user in similar_users:
         dbResponse = db.friend.find_one(
             {"$or": [{"user_1": user["username"], "user_2": similar_user["username"]}, {"user_1": similar_user["username"], "user_2": user["username"]}]})
+        print(dbResponse)
         if dbResponse != None:
             similar_users.remove(similar_user)
 
@@ -115,6 +117,8 @@ def get_suggested_users_using_education(username):
 
 def get_suggested_users_using_mututals(user_id):
     user = db.users.find_one({"_id": ObjectId(id)})
+    friends = list(db.friend.find(
+        {"$or": [{"user_1": user["username"]}, {"user_2": user["username"]}]}))
 
 
 def get_resource_suggestion():

@@ -3,6 +3,8 @@ from http.client import UNAUTHORIZED
 from ..events.notifications.functions import on_being_mentioned, on_getting_reply, on_post_like
 from re import L
 from telnetlib import EC
+
+from urllib.parse import urlparse
 from xml.dom import NotFoundErr
 from flask import Flask, Blueprint, request, Response
 from bson import ObjectId
@@ -17,12 +19,22 @@ from .helpers.exceptions import *
 from .helpers.functions import *
 import calendar
 import time
+import cloudinary
+from cloudinary import uploader
+from cloudinary import utils
 sys.path.append(os.path.abspath("../../api"))
 sys.path.append(os.path.abspath('../../main'))
 
 
 forum = Blueprint('forum', __name__)
 JWT_SECRET_KEY = "d445191d82cd77c696de"
+
+
+cloudinary.config(
+    cloud_name="disle0uxb",
+    api_key="446358817718849",
+    api_secret="j_C_uiZ0F1977_ZNz-0UNj7cdeE"
+)
 
 
 # HELPER
@@ -103,10 +115,17 @@ def update_post(id):
             jwt=token,  key=JWT_SECRET_KEY, algorithms=['HS256'])
         user = db.users.find_one({"_id": ObjectId(payload["user_id"])})
 
+        previous_image = db.forum.find_one(
+            {"_id": ObjectId(id), "username": user["username"]})["image"]
+
         dbResponse = db.forum.update_one({"_id": ObjectId(id), "username": user["username"]}, {
                                          "$set": {"content": content["content"], "image": content["image"]}})
 
         if dbResponse.modified_count == 1:
+            if previous_image != "":
+                public_id = urlparse(previous_image).path.split("/")[-1]
+                public_id, _ = os.path.splitext(public_id)
+                uploader.destroy(public_id)
             return Response(response=json.dumps({"data": "Updated", "success": True}), status=200, mimetype="applcation/json")
         else:
             return Response(response=json.dumps({"data": "Nothing to update", "success": True}), status=200, mimetype="applcation/json")
@@ -130,36 +149,43 @@ def update_post(id):
 @forum.route("/post/<id>", methods=["DELETE"])
 def delete_post(id):
     try:
-        content = request.get_json()
-        content_check(content)
-
         token = request.headers['Authorization']
         payload = jwt.decode(
             jwt=token,  key=JWT_SECRET_KEY, algorithms=['HS256'])
         user = db.users.find_one({"_id": ObjectId(payload["user_id"])})
 
         post = db.forum.find_one({"_id": ObjectId(id)})
+        print("1")
         if post["username"] == user["username"]:
+            print("2")
+            image_url = db.forum.find_one({"_id": ObjectId(id)})["image"]
+            print("3")
             dbResponse = db.forum.delete_one({"_id": ObjectId(id)})
         else:
             return Response(response=json.dumps({"data": "Unauthorized", "success": False}), status=401, mimetype="applcation/json")
 
         if dbResponse.deleted_count == 1:
+            if image_url != "":
+                public_id = urlparse(image_url).path.split("/")[-1]
+                public_id, _ = os.path.splitext(public_id)
+                uploader.destroy(public_id)
+
             return Response(response=json.dumps({"data": "Deleted", "success": True}), status=200, mimetype="applcation/json")
         else:
             raise Exception("Something went wrong")
     except jwt.exceptions.DecodeError as ex:
         return Response(response=json.dumps({"data": "Please use a valid form of JWT token", "success": False}), status=400, mimetype="applcation/json")
     except StringTooShortException as ex:
-        return Response(response=json.dumps({"data": ex.args[0], "success": False}), status=400, mimetype="application/json")
+        return Response(response=json.dumps({"data": ex.args, "success": False}), status=400, mimetype="application/json")
     except StringTooLongException as ex:
-        return Response(response=json.dumps({"data": ex.args[0], "success": False}), status=400, mimetype="application/json")
+        return Response(response=json.dumps({"data": ex.args, "success": False}), status=400, mimetype="application/json")
     except EmptyField as ex:
-        return Response(response=json.dumps({"data": ex.args[0], "success": False}), status=400, mimetype="application/json")
+        return Response(response=json.dumps({"data": ex.args, "success": False}), status=400, mimetype="application/json")
     except jwt.InvalidSignatureError as ex:
-        return Response(response=json.dumps({"data": ex.args[0], "success": False}), status=400, mimetype="application/json")
+        return Response(response=json.dumps({"data": ex.args, "success": False}), status=400, mimetype="application/json")
     except Exception as ex:
-        return Response(response=json.dumps({"data": ex.args[0], "success": False}), status=500, mimetype="application/json")
+        print(ex.args)
+        return Response(response=json.dumps({"data": ex.args, "success": False}), status=500, mimetype="application/json")
 
 
 # GET SPECIFIC POST

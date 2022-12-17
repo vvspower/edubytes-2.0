@@ -1,12 +1,16 @@
-from http.client import UNAUTHORIZED
-from flask import Flask, Blueprint, request, Response
 import json
-from bson import ObjectId
-import jwt
-import sys
 import os
+import sys
+from http.client import UNAUTHORIZED
+
+import jwt
+from bson import ObjectId
+from flask import Blueprint, Flask, Response, request
+
 from api import db, db_marketplace
+
 from .helpers.functions import *
+
 sys.path.append(os.path.abspath("../../api"))
 sys.path.append(os.path.abspath('../../main'))
 
@@ -17,8 +21,10 @@ JWT_SECRET_KEY = "d445191d82cd77c696de"
 try:
     from .models import resource_model
     db_marketplace.create_collection("resources")
-    db_marketplace.resources.create_index({"name": "text", "subject": "text"})
-    db_marketplace.command("collMod", "resources", validator=resource_model)
+    db_marketplace.create_collection("resource_rating")
+    ok = db_marketplace.resources.create_index({"resource_title": "text"})
+    print(ok)
+    # db_marketplace.command("collMod", "resources", validator=resource_model)
     db_marketplace.create_collection("orders")
     # ? create collmod model
 except Exception as ex:
@@ -48,8 +54,11 @@ def upload_resource():
             jwt=token,  key=JWT_SECRET_KEY, algorithms=['HS256'])
         user = db.users.find_one({"_id": ObjectId(payload["user_id"])})[
             "username"]
+        user_pfp = db.users.find_one({"_id": ObjectId(payload["user_id"])})[
+            "details"]["pfp"]
+
         resource = initialize_resource(
-            content=content, username=user)
+            content=content, username=user, pfp=user_pfp)
         db_response = db_marketplace.resources.insert_one(resource)
         return Response(response=json.dumps({"data": "uploaded"}), status=200, mimetype="application/json")
     except jwt.InvalidSignatureError as ex:
@@ -115,9 +124,11 @@ def delete_resource(id):
 @resources.route("/", methods=["GET"])
 def get_resources():
     try:
-        resources = list(db_marketplace.resources.find())
+        resources = list(db_marketplace.resources.find(
+            {"visibility": "public"}))
         for item in resources:
             item["_id"] = str(item["_id"])
+            item["rating"] = get_resource_rating(item["_id"])
 
         return Response(response=json.dumps({"data": resources}), status=200, mimetype="application/json")
     except Exception as ex:
@@ -130,9 +141,9 @@ def get_resources():
 @resources.route("/<id>", methods=["GET"])
 def get_specific_resource(id):
     try:
-        resources = list(db_marketplace.resources.find({"_id": ObjectId(id)}))
-        for item in resources:
-            item["_id"] = str(item["_id"])
+        resources = db_marketplace.resources.find_one({"_id": ObjectId(id)})
+        resources["_id"] = str(resources["_id"])
+        resources["rating"] = get_resource_rating(resources["_id"])
 
         return Response(response=json.dumps({"data": resources}), status=200, mimetype="application/json")
     except Exception as ex:
@@ -141,40 +152,38 @@ def get_specific_resource(id):
 
 # get free resource
 
-@resources.route("/free", methods=["GET"])
-def get_free_resource():
-    try:
-        resources = list(db_marketplace.resources.find({"price": 0}))
-        for item in resources:
-            item["_id"] = str(item["_id"])
-
-        return Response(response=json.dumps({"data": resources}), status=200, mimetype="application/json")
-    except Exception as ex:
-        return Response(response=json.dumps({"data": ex.args[0]}), status=500, mimetype="application/json")
-
-# get paid resource
-
-
-@resources.route("/paid", methods=["GET"])
-def get_paid_resource():
-    try:
-        resources = list(db_marketplace.resources.find({"price": {"$ne": 0}}))
-        for item in resources:
-            item["_id"] = str(item["_id"])
-
-        return Response(response=json.dumps({"data": resources}), status=200, mimetype="application/json")
-    except Exception as ex:
-        return Response(response=json.dumps({"data": ex.args[0]}), status=500, mimetype="application/json")
-
 
 # get all user resources
 
 @resources.route("/<username>", methods=["GET"])
-def get_user_resource(username):
+def get_user_resource_public(username):
     try:
-        resources = list(db_marketplace.resources.find({"username": username}))
+        resources = list(db_marketplace.resources.find(
+            {"username": username, "visibility": "public"}))
         for item in resources:
             item["_id"] = str(item["_id"])
+            item["rating"] = get_resource_rating(item["_id"])
+
+        return Response(response=json.dumps({"data": resources}), status=200, mimetype="application/json")
+    except Exception as ex:
+        return Response(response=json.dumps({"data": ex.args[0]}), status=500, mimetype="application/json")
+
+
+# get user resources with auth
+
+@resources.route("/user", methods=["GET"])
+def get_user_resource_private():
+    try:
+        token = request.headers['Authorization']
+        payload = jwt.decode(
+            jwt=token,  key=JWT_SECRET_KEY, algorithms=['HS256'])
+        username = db.users.find_one({"_id": ObjectId(payload["user_id"])})[
+            "username"]
+        resources = list(db_marketplace.resources.find(
+            {"username": username}))
+        for item in resources:
+            item["_id"] = str(item["_id"])
+            item["rating"] = get_resource_rating(item["_id"])
 
         return Response(response=json.dumps({"data": resources}), status=200, mimetype="application/json")
     except Exception as ex:
@@ -183,15 +192,74 @@ def get_user_resource(username):
 
 # search for query
 
+# conditions
 
-@resources.route("/search/<query>", methods=["GET"])
-def search_resource(query):
+# all boards - search
+# 1 board - all subjects - search
+# 1 board - 1 subject - search
+
+
+@resources.route("/search/<board>/<subject>/<query>", methods=["GET"])
+def search_resource(board, subject, query):
     try:
-        resources = list(db_marketplace.resources.find(
-            {"$text": {"$search": query}}))
-        for item in resources:
-            item["_id"] = str(item["_id"])
+        return_resource = []
+        if board == "all":
+            if query == "all":
+                return_resource = list(
+                    db_marketplace.resources.find({"visibility": "public"}))
+            else:
+                return_resource = list(db_marketplace.resources.find(
+                    {"$text": {"$search": query}, "visibility": "public"}))
 
-        return Response(response=json.dumps({"data": resources}), status=200, mimetype="application/json")
+        if board != "all" and subject == "all":
+            if query != "all":
+                return_resource = list(db_marketplace.resources.find(
+                    {"$text": {"$search": query}, "board": board, "visibility": "public"}))
+            else:
+                return_resource = list(db_marketplace.resources.find(
+                    {"board": board, "visibility": "public"}))
+
+        if board != "all" and subject != "all":
+            if query != "all":
+                return_resource = list(db_marketplace.resources.find(
+                    {"$text": {"$search": query}, "board": board, "subject": subject, "visibility": "public"}))
+            else:
+                return_resource = list(db_marketplace.resources.find(
+                    {"board": board, "subject": subject, "visibility": "public"}))
+        # todo: create ability to also search when selected filters of all
+        for item in return_resource:
+            item["_id"] = str(item["_id"])
+            item["rating"] = get_resource_rating(item["_id"])
+
+        return Response(response=json.dumps({"data": return_resource}), status=200, mimetype="application/json")
     except Exception as ex:
+        print(ex)
+        return Response(response=json.dumps({"data": "Something went wrong. Please try again"}), status=500, mimetype="application/json")
+
+# updating rating
+
+
+@resources.route("/rating/<id>", methods=["PUT"])
+def create_rating(id):
+    try:
+        content = request.get_json()
+        token = request.headers['Authorization']
+        payload = jwt.decode(
+            jwt=token,  key=JWT_SECRET_KEY, algorithms=['HS256'])
+        username = db.users.find_one({"_id": ObjectId(payload["user_id"])})[
+            "username"]
+        user_rating = db_marketplace.resource_rating.find_one(
+            {"username": username, "resource_id": id})
+
+        print(user_rating)
+        if user_rating != None:
+            db_marketplace.resource_rating.update_one(
+                {"resource_id": id, "username": username}, {"$set": {"rating": int(content["rating"])}})
+        if user_rating == None:
+            db_marketplace.resource_rating.insert_one(
+                {"resource_id": id, "username": username, "rating": int(content["rating"])})
+
+        return Response(response=json.dumps({"data": content["rating"]}), status=200, mimetype="application/json")
+    except Exception as ex:
+        print(ex)
         return Response(response=json.dumps({"data": "Something went wrong. Please try again"}), status=500, mimetype="application/json")

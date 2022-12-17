@@ -193,6 +193,7 @@ def check_user(username):
 def update_user():
     try:
         token = request.headers['Authorization']
+        print(token, "hello")
         if token == "":
             raise HTTP_HEADER_MISSING("auth-token missing")
         content = request.get_json()
