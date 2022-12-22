@@ -108,24 +108,26 @@ def post():
 def update_post(id):
     try:
         content = request.get_json()
-        content_check(content)
+        # content will have content and image
 
         token = request.headers['Authorization']
         payload = jwt.decode(
             jwt=token,  key=JWT_SECRET_KEY, algorithms=['HS256'])
         user = db.users.find_one({"_id": ObjectId(payload["user_id"])})
 
-        previous_image = db.forum.find_one(
-            {"_id": ObjectId(id), "username": user["username"]})["image"]
+        # previous_image = db.forum.find_one(
+        #     {"_id": ObjectId(id), "username": user["username"]})["image"]
 
         dbResponse = db.forum.update_one({"_id": ObjectId(id), "username": user["username"]}, {
-                                         "$set": {"content": content["content"], "image": content["image"]}})
+                                         "$set": {"content": content["content"]}})
 
         if dbResponse.modified_count == 1:
-            if previous_image != "":
-                public_id = urlparse(previous_image).path.split("/")[-1]
-                public_id, _ = os.path.splitext(public_id)
-                uploader.destroy(public_id)
+            # if previous_image != "":
+            #     public_id = urlparse(previous_image).path.split("/")[-1]
+            #     public_id, _ = os.path.splitext(public_id)
+            #     uploader.destroy(public_id)
+
+            # implement changing of image in the future
             return Response(response=json.dumps({"data": "Updated", "success": True}), status=200, mimetype="applcation/json")
         else:
             return Response(response=json.dumps({"data": "Nothing to update", "success": True}), status=200, mimetype="applcation/json")
@@ -328,9 +330,29 @@ def filter_post_using_tags(target, tag):
     except Exception as ex:
         return Response(response=json.dumps({"data": ex.args[0], "success": False}), status=500, mimetype="application/json")
 
+# SEARCH POSTS
+
+
+@forum.route("/post/search/<query>", methods=["GET"])
+def search_posts(query):
+    try:
+        token = request.headers['Authorization']
+        payload = jwt.decode(
+            jwt=token,  key=JWT_SECRET_KEY, algorithms=['HS256'])
+        user = db.users.find_one({"_id": ObjectId(payload["user_id"])})
+        posts = list(db.forum.find(
+            {"$text": {"$search": query}}))
+        for item in posts:
+            item["user_pfp"] = db.users.find_one({"username": item["username"]})[
+                "details"]["pfp"]
+            item["_id"] = str(item["_id"])
+        print(posts)
+        return Response(response=json.dumps({"data": posts, "success": True}), status=200, mimetype="applcation/json")
+    except Exception as ex:
+        return Response(response=json.dumps({"data": ex.args[0], "success": False}), status=500, mimetype="application/json")
+
 
 # ? LIKE API
-
 
 @forum.route("/post/like/<id>/<type>", methods=["POST"])
 def like_post(id, type):

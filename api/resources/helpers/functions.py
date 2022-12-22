@@ -47,7 +47,8 @@ def get_resource_rating(id):
     avg_rating = 0
     ratings = list(db_marketplace.resource_rating.find({"resource_id": id}))
     for item in ratings:
+        item["_id"] = str(item["_id"])
         avg_rating += item["rating"]
     if len(ratings) != 0:
-        avg_rating / len(ratings)
+        avg_rating = avg_rating / len(ratings)
     return avg_rating

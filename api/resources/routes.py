@@ -104,17 +104,18 @@ def delete_resource(id):
             jwt=token,  key=JWT_SECRET_KEY, algorithms=['HS256'])
         user = db.users.find_one({"_id": ObjectId(payload["user_id"])})[
             "username"]
-        if user["username"] == db_marketplace.resources.find_one({"_id": ObjectId(id)})["username"]:
+        if user == db_marketplace.resources.find_one({"_id": ObjectId(id)})["username"]:
             db_response = db_marketplace.resources.delete_one(
                 {"_id": ObjectId(id)})
         else:
             raise Unauthorized("Unauthorized")
 
         if db_response.deleted_count == 1:
-            return Response(response=json.dumps({"data": resources}), status=200, mimetype="application/json")
+            return Response(response=json.dumps({"data": "deleted successfully"}), status=200, mimetype="application/json")
         else:
             raise Exception("Something went wrong")
     except Exception as ex:
+        print(ex)
         return Response(response=json.dumps({"data": ex.args[0]}), status=500, mimetype="application/json")
 
 
@@ -141,12 +142,31 @@ def get_resources():
 @resources.route("/<id>", methods=["GET"])
 def get_specific_resource(id):
     try:
+        token = request.headers['Authorization']
+        payload = jwt.decode(
+            jwt=token,  key=JWT_SECRET_KEY, algorithms=['HS256'])
+        username = db.users.find_one({"_id": ObjectId(payload["user_id"])})[
+            "username"]
         resources = db_marketplace.resources.find_one({"_id": ObjectId(id)})
         resources["_id"] = str(resources["_id"])
-        resources["rating"] = get_resource_rating(resources["_id"])
+        resources["rating"] = get_resource_rating(
+            resources["_id"])
+        print("here")
+        rating = db_marketplace.resource_rating.find_one(
+            {"username": username, "resource_id": id})
+        print("--------")
+        print(rating)
+        print("--------")
+
+        if rating == None:
+            resources["user_rated"] = 0
+        else:
+            resources["user_rated"] = rating["rating"]
+        print(resources)
 
         return Response(response=json.dumps({"data": resources}), status=200, mimetype="application/json")
     except Exception as ex:
+        print(ex)
         return Response(response=json.dumps({"data": ex.args[0]}), status=500, mimetype="application/json")
 
 
