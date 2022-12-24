@@ -332,7 +332,6 @@ def filter_post_using_tags(target, tag):
 
 # SEARCH POSTS
 
-
 @forum.route("/post/search/<query>", methods=["GET"])
 def search_posts(query):
     try:

@@ -28,6 +28,10 @@ resource_model = {
                 "bsonType": "number",
                 "description": "must be a string and is required"
             },
+            "raters": {
+                "bsonType": "array",
+                "description": "must be a array and is required"
+            },
             "file_type": {
                 "bsonType": "string",
                 "description": "must be a string and is required"

@@ -19,9 +19,13 @@ study_track_model = {
                 "bsonType": "string",
                 "description": "must be a string and is required",
             },
-            "attatchments": {
-                "bsonType": "string",
+            "completed": {
+                "bsonType": "boolean",
                 "description": "must be a string and is required",
+            },
+            "attatchments": {
+                "bsonType": "array",
+                "description": "must be a array and is required",
             },
             "created": {
                 "bsonType": "string",

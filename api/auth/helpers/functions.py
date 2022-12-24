@@ -68,7 +68,7 @@ def initialize_user(payload):
         "partnerd": False,
         "details": {
             "bio": "",
-            "pfp": "",
+            "pfp": "https://res.cloudinary.com/disle0uxb/image/upload/v1647259610/user_nlokii.jpg",
             "verified": False
         },
         "education": {
