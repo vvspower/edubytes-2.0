@@ -1,7 +1,7 @@
 study_track_model = {
     "$jsonSchema": {
         "bsonType": "object",
-        "required": ["username", "title", "description" "due_date", "attatchments", "created"],
+        "required": ["username", "title", "description" "due_date", "completed", "type",  "attatchments", "created"],
         "properties": {
             "username": {
                 "bsonType": "string",
@@ -20,17 +20,23 @@ study_track_model = {
                 "description": "must be a string and is required",
             },
             "completed": {
-                "bsonType": "boolean",
+                "bsonType": "bool",
+                "description": "must be a boolean and is required",
+            },
+            "type": {
+                "bsonType": "string",
                 "description": "must be a string and is required",
             },
+            # type = exam / study
             "attatchments": {
-                "bsonType": "array",
-                "description": "must be a array and is required",
+                "bsonType": "object",
+                "description": "must be a object and is required",
             },
             "created": {
                 "bsonType": "string",
                 "description": "must be a string and is required"
             }
+
         }
     }
 }

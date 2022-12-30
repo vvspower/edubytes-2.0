@@ -31,6 +31,7 @@ def create_app():
     from .friend_sys.routes import friend
     from .events.notifications.routes import notification
     from .resources.routes import resources
+    from .planner.routes import planner
 
     app.register_blueprint(auth, url_prefix='/auth')
     app.register_blueprint(forum, url_prefix='/community/forums')
@@ -38,5 +39,6 @@ def create_app():
     app.register_blueprint(friend, url_prefix='/friend')
     app.register_blueprint(notification, url_prefix='/notifications')
     app.register_blueprint(resources, url_prefix='/resources')
+    app.register_blueprint(planner, url_prefix='/planner')
 
     return app
