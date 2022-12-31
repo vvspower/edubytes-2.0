@@ -23,6 +23,7 @@ def get_notifications():
         notifs = list(db_events.notifications.find({"for": user["username"]}))
         for notif in notifs:
             notif["_id"] = str(notif["_id"])
+        notifs.reverse()
         return Response(response=json.dumps({"data": notifs, "success": True}), status=200, mimetype="application/json")
     except Exception as ex:
         print(ex)

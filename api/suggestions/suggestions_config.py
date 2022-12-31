@@ -2,8 +2,9 @@
 import re
 import sys
 import os
-from api import db
+from api import db, db_marketplace
 from bson import ObjectId
+import random
 
 sys.path.append(os.path.abspath("../api"))
 sys.path.append(os.path.abspath('../main'))
@@ -121,5 +122,21 @@ def get_suggested_users_using_mututals(user_id):
         {"$or": [{"user_1": user["username"]}, {"user_2": user["username"]}]}))
 
 
-def get_resource_suggestion():
-    pass
+def get_resource_suggestion(user):
+    print("EY HEY HE")
+    print(user["education"]["subjects"])
+    matched_resources = []
+    resources = list(db_marketplace.resources.find({"visibility": "public"}))
+    for item in resources:
+        for subject in user["education"]["subjects"]:
+            # print(item["subject"], subject)
+            if item["subject"] == subject:
+                matched_resources.append(item)
+
+    for item in matched_resources:
+        item["_id"] = str(item["_id"])
+
+    if len(matched_resources) > 4:
+        matched_resources = random.sample(matched_resources, 4)
+
+    return matched_resources

@@ -50,6 +50,7 @@ def on_create_user(username):
 
 def on_getting_reply(from_username, post_id, reply):
     # reply is the text
+    print("I WAS HERE")
 
     text = f"{from_username} replied to your post: {textwrap.shorten(reply, width=15, placeholder='...')}"
     redirect = f'/post?v={post_id}'
@@ -86,12 +87,13 @@ def on_being_mentioned(username_of_mentioner, post_id, content):
 
 
 def on_post_like(username, post_id, type):
+    print("I AM HERE")
     reaction = "reacted"
     if type == "like":
         reaction = "liked"
     # getting the username of the person whos post was liked
     for_username = db.forum.find_one({"_id": ObjectId(post_id)})["username"]
-    text = f"{username} {reaction} to your post "
+    text = f"{username} {reaction} your post "
     redirect = f"/post?v={post_id}"
     notification = create_notification(
         for_username, username,  text, redirect, type=type)

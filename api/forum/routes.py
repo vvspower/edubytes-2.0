@@ -157,11 +157,11 @@ def delete_post(id):
         user = db.users.find_one({"_id": ObjectId(payload["user_id"])})
 
         post = db.forum.find_one({"_id": ObjectId(id)})
-        print("1")
+
         if post["username"] == user["username"]:
-            print("2")
+
             image_url = db.forum.find_one({"_id": ObjectId(id)})["image"]
-            print("3")
+
             dbResponse = db.forum.delete_one({"_id": ObjectId(id)})
         else:
             return Response(response=json.dumps({"data": "Unauthorized", "success": False}), status=401, mimetype="applcation/json")
@@ -217,9 +217,10 @@ def get_post(id):
 # Posts by target and subject
 
 
-@forum.route("/post/i/<target>/<subject>", methods=["GET"])
-def get_posts_from_target(target, subject):
+@forum.route("/post/i/<target>/<subject>/<number>", methods=["GET"])
+def get_posts_from_target(target, subject, number):
     try:
+        limit = 15
         posts = list(db.forum.find({"target": target, "subject": subject}))
 
         for item in posts:
@@ -234,7 +235,7 @@ def get_posts_from_target(target, subject):
                 del like["post"]
             item["likes"] = likes
         sorted_post = sorted(posts, key=lambda d: d["created"], reverse=True)
-        return Response(response=json.dumps({"data": sorted_post, "success": True}), status=200, mimetype="applcation/json")
+        return Response(response=json.dumps({"data": sorted_post[0: limit + int(number)], "success": True}), status=200, mimetype="applcation/json")
     except Exception as ex:
         return Response(response=json.dumps({"data": ex.args[0], "success": False}), status=500, mimetype="application/json")
 
@@ -250,7 +251,7 @@ def get_post_from_username(username):
             raise NotFoundErr("user does not exist")
         for item in posts:
             user = db.users.find_one({"username": item["username"]})
-            print(str(item["_id"]))
+
             likes = list(db.forum_likes.find({"post": str(item["_id"])}))
             for like in likes:
                 del like["_id"]
@@ -258,7 +259,6 @@ def get_post_from_username(username):
                 like["user_pfp"] = db.users.find_one({"username": like["username"]})[
                     "details"]["pfp"]
 
-            print(likes)
             item["likes"] = likes
             item["user_pfp"] = user["details"]["pfp"]
             item["_id"] = str(item["_id"])
@@ -279,12 +279,11 @@ def get_top_posts(target):
         return_list = []
         posts = list(db.forum.find({"target": target}))
         posts = add_likes(posts)
-        print("start")
 
         # finds posts which were created between today and 24 hours ago
 
         filtered_today = filter_between_today_and_24h_ago(posts)
-        print(filtered_today)
+
         # finds posts which were created 24 hours ago and before
         filtered_yesterday = filter_between_24h_ago_and_before(posts)
 
@@ -305,10 +304,8 @@ def get_top_posts(target):
             pfp = db.users.find_one({"username": item["username"]})[
                 "details"]["pfp"]
 
-            print(pfp)
             item["user_pfp"] = pfp
 
-        print(return_list)
         return Response(response=json.dumps({"data": {"case": case, "sorted": return_list}, "success": True}), status=200, mimetype="applcation/json")
 
     except Exception as ex:
@@ -325,7 +322,7 @@ def filter_post_using_tags(target, tag):
             {"tags": {"$all": [tag]}, "target": target}))
         for post in posts:
             post["_id"] = str(post["_id"])
-        print(posts)
+
         return Response(response=json.dumps({"data": posts, "success": True}), status=200, mimetype="applcation/json")
     except Exception as ex:
         return Response(response=json.dumps({"data": ex.args[0], "success": False}), status=500, mimetype="application/json")
@@ -346,7 +343,7 @@ def search_posts(query):
             item["user_pfp"] = db.users.find_one({"username": item["username"]})[
                 "details"]["pfp"]
             item["_id"] = str(item["_id"])
-        print(posts)
+
         return Response(response=json.dumps({"data": posts, "success": True}), status=200, mimetype="applcation/json")
     except Exception as ex:
         return Response(response=json.dumps({"data": ex.args[0], "success": False}), status=500, mimetype="application/json")
