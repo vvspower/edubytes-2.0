@@ -1,6 +1,7 @@
 from api import create_app
 from flask import Flask, Request, Response
 from flask_cors import CORS, cross_origin
+import os
 
 app = create_app()
 CORS(app)
@@ -19,7 +20,7 @@ def hello_world():
 
 
 if __name__ == '__main__':
-    app.run(debug=True, port=9000)
+    app.run(debug=True, port=int(os.environ.get('PORT', 5000)))
 
 # TODO : Create test cases
 # with app.test_client() as c:
