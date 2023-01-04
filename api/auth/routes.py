@@ -24,7 +24,7 @@ JWT_SECRET_KEY = "d445191d82cd77c696de"
 try:
     from .models import user_model, notification_model
     db.create_collection("users")
-    db.command("collMod", "users", validator=user_model)
+    db.command("collMod", "users", validator={})
     db.create_collection("notifications")
     db.command("collMod", "notifications", validator=notification_model)
 
@@ -54,13 +54,13 @@ def sign_up():
         password = bcrypt.hashpw(content["password"].encode('utf-8'), salt)
 
         payload = {'username': content["username"], 'email': content["email"], 'password': password.decode(
-            'utf-8'), "exp": datetime.datetime.utcnow() + datetime.timedelta(minutes=15), }  # 15 minutes timeout
+            'utf-8'), "ip": request.remote_addr, "exp": datetime.datetime.utcnow() + datetime.timedelta(minutes=15), }  # 15 minutes timeout
         token = jwt.encode(payload=payload, key=JWT_SECRET_KEY)
 
         # ? Covert code to send email instead of return auth token
-        # send_email(content["email"], token)
+        send_email(content["email"], token)
 
-        return Response(response=json.dumps({"data": token, "success": True}), status=200, mimetype="applcation/json")
+        return Response(response=json.dumps({"data": "Email has been send", "success": True}), status=200, mimetype="applcation/json")
     except EmptyField as ex:
         return Response(response=json.dumps({"data": ex.args[0], "success": False}), status=400, mimetype="applcation/json")
     except jwt.ExpiredSignatureError:
@@ -79,7 +79,8 @@ def sign_up():
 def verify_user():
     try:
 
-        token = request.headers["token"]
+        token = request.headers["Authorization"]
+        print(token)
 
         dbResponse = db.dead_tokens.find_one({"token": token})
         if dbResponse == None:
@@ -130,7 +131,7 @@ def login_user():
 
             return Response(response=json.dumps({"data": token, "success": True}), status=200, mimetype="applcation/json")
         else:
-            return Response(response=json.dumps({"data": "incorrect credentialsus"}), status=400, mimetype="applcation/json")
+            return Response(response=json.dumps({"data": "incorrect credentials"}), status=400, mimetype="applcation/json")
     except EmptyField as ex:
         return Response(response=json.dumps({"data": ex.args[0], "success": False}), status=400, mimetype="applcation/json")
     except NotFoundErr as ex:

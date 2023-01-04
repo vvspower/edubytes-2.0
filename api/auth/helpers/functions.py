@@ -30,9 +30,9 @@ Hi {email},
 
 We recieved your request for creating an account
 
-please click on this link to verfiy your account (link of website)  {token}
+please click on this link to verfiy your account http://127.0.0.1:5173/verify?jwt={token}
 
-Code will expire after 15 minutes
+link will expire after 15 minutes
 
 Thanks,
 EduBytes""", 'plain'))
@@ -63,18 +63,16 @@ def initialize_user(payload):
         "username": payload["username"],
         "email": payload["email"],
         "password": payload["password"].encode('utf-8'),
+        "ip": payload["ip"],
         "created": f"{calendar.timegm(gmt)}",
         "admin": False,
-        "partnerd": False,
         "details": {
             "bio": "",
             "pfp": "https://res.cloudinary.com/disle0uxb/image/upload/v1647259610/user_nlokii.jpg",
-            "verified": False
+            "completed": False
         },
         "education": {
             "institute": "",  # string
-            "university": False,  # bool
-            "college": False,  # bool,
             "subjects": [],  # array of strings
         }
     }

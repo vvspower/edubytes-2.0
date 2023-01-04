@@ -277,7 +277,7 @@ def get_top_posts(target):
     try:
         case = "today"
         return_list = []
-        posts = list(db.forum.find({"target": target}))
+        posts = list(db.forum.find({"target": "general"}))
         posts = add_likes(posts)
 
         # finds posts which were created between today and 24 hours ago
