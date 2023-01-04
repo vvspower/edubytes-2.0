@@ -4,7 +4,6 @@ from google.oauth2.credentials import Credentials
 from googleapiclient.http import MediaFileUpload
 from flask import Blueprint, request, Response
 from .helpers.functions import *
-from magic import from_buffer
 from werkzeug.datastructures import FileStorage
 import requests
 import sys
