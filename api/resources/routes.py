@@ -23,7 +23,6 @@ try:
     db_marketplace.create_collection("resources")
     db_marketplace.create_collection("resource_rating")
     ok = db_marketplace.resources.create_index({"resource_title": "text"})
-    print(ok)
     # db_marketplace.command("collMod", "resources", validator=resource_model)
     db_marketplace.create_collection("orders")
     # ? create collmod model
@@ -151,18 +150,14 @@ def get_specific_resource(id):
         resources["_id"] = str(resources["_id"])
         resources["rating"] = get_resource_rating(
             resources["_id"])
-        print("here")
         rating = db_marketplace.resource_rating.find_one(
             {"username": username, "resource_id": id})
-        print("--------")
-        print(rating)
-        print("--------")
+   
 
         if rating == None:
             resources["user_rated"] = 0
         else:
             resources["user_rated"] = rating["rating"]
-        print(resources)
 
         return Response(response=json.dumps({"data": resources}), status=200, mimetype="application/json")
     except Exception as ex:
@@ -271,7 +266,6 @@ def create_rating(id):
         user_rating = db_marketplace.resource_rating.find_one(
             {"username": username, "resource_id": id})
 
-        print(user_rating)
         if user_rating != None:
             db_marketplace.resource_rating.update_one(
                 {"resource_id": id, "username": username}, {"$set": {"rating": int(content["rating"])}})

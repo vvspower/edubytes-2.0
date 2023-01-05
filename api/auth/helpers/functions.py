@@ -30,7 +30,7 @@ Hi {email},
 
 We recieved your request for creating an account
 
-please click on this link to verfiy your account http://127.0.0.1:5173/verify?jwt={token}
+please click on this link to verfiy your account http://edubytes.me/verify?jwt={token}
 
 link will expire after 15 minutes
 
@@ -42,7 +42,6 @@ EduBytes""", 'plain'))
         smtp.starttls()
         smtp.login(EMAIL, APP_PASSWORD)
         smtp.send_message(message)
-        print("Sent")
 
 
 def check_email_exists(email):
@@ -93,7 +92,5 @@ def get_friends(username):
                 friend_name = value
         pfp = db.users.find_one({"username": friend_name})["details"]["pfp"]
         all_friends.append({"username": friend_name, "pfp": pfp})
-
-    print(friends)
 
     return all_friends

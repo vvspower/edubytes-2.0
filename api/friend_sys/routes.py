@@ -117,7 +117,6 @@ def accept_friend_req(username):
         reciever_user = db.users.find_one({"_id": ObjectId(payload["user_id"])})[
             "username"]
         user = username
-        print(username)
 
         if user == reciever_user:
             raise Forbidden("Cannot add friend to yourself")

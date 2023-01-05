@@ -49,8 +49,7 @@ def on_create_user(username):
 
 
 def on_getting_reply(from_username, post_id, reply):
-    # reply is the text
-    print("I WAS HERE")
+
 
     text = f"{from_username} replied to your post: {textwrap.shorten(reply, width=15, placeholder='...')}"
     redirect = f'/post?v={post_id}'
@@ -62,12 +61,11 @@ def on_getting_reply(from_username, post_id, reply):
 
 def on_being_mentioned(username_of_mentioner, post_id, content):
     mentioned_user = re.findall("@([a-zA-Z0-9]{1,15})", content)
-    print(mentioned_user)
     am = {}  # already mentioned
     for name in mentioned_user:
         am[name] = {}
         am[name]["mentioned"] = False
-    print(am)
+
     text = f"{username_of_mentioner} mentioned you in a comment.."
     redirect = f'/post?v={post_id}'
     for username in mentioned_user:
@@ -87,7 +85,6 @@ def on_being_mentioned(username_of_mentioner, post_id, content):
 
 
 def on_post_like(username, post_id, type):
-    print("I AM HERE")
     reaction = "reacted"
     if type == "like":
         reaction = "liked"

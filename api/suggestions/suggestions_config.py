@@ -23,11 +23,10 @@ def get_suggested_posts_according_to_post(post_id):
     # if more than 5 words match, post is recommended.
 
     post = db.forum.find_one({"_id": ObjectId(post_id)})
-    print(post)
     subject = post["subject"]
     target = post["target"]
     text = str(post["content"])
-    print(text)
+ 
 
     querywords = text
     words = [word for word in re.split(
@@ -46,7 +45,6 @@ def get_suggested_posts_according_to_post(post_id):
             for word_to_check in check_words:
                 if word_to_find == word_to_check:
                     words_matched = words_matched + 1
-        print(words_matched)
 
         if words_matched >= 5:
             matched_posts.append(post)
@@ -62,13 +60,12 @@ def get_suggested_posts_according_to_post(post_id):
     for post in result:
         pfp = db.users.find_one({"username": post["username"]})[
             "details"]["pfp"]
-        print(pfp,  "here")
+
         post["user_pfp"] = pfp
 
     # reason for making two different loops and lists is because there was some bug due to which it wasnt executing all of the
     # code in loop, so i divided in two different. second list for clarity
 
-    print(result)
 
     return result
 
@@ -85,7 +82,6 @@ def get_suggested_users_using_education(username):
     for similar_user in similar_users:
         dbResponse = db.friend.find_one(
             {"$or": [{"user_1": user["username"], "user_2": similar_user["username"]}, {"user_1": similar_user["username"], "user_2": user["username"]}]})
-        print(dbResponse)
         if dbResponse != None:
             similar_users.remove(similar_user)
 
@@ -112,7 +108,7 @@ def get_suggested_users_using_education(username):
     for user in suggested_users:
         user["_id"] = str(user["_id"])
 
-    print(suggested_users)
+
     return suggested_users
 
 
@@ -123,8 +119,7 @@ def get_suggested_users_using_mututals(user_id):
 
 
 def get_resource_suggestion(user):
-    print("EY HEY HE")
-    print(user["education"]["subjects"])
+
     matched_resources = []
     resources = list(db_marketplace.resources.find({"visibility": "public"}))
     for item in resources:

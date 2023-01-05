@@ -68,7 +68,6 @@ def sign_up():
     except RequiredExists as ex:
         return Response(response=json.dumps({"data": ex.args[0], "success": False}), status=403, mimetype="applcation/json")
     except Exception as ex:
-        print(ex)
         return Response(response=json.dumps({"data": ex.args[0], "success": False}), status=500, mimetype="applcation/json")
 
 
@@ -80,7 +79,6 @@ def verify_user():
     try:
 
         token = request.headers["Authorization"]
-        print(token)
 
         dbResponse = db.dead_tokens.find_one({"token": token})
         if dbResponse == None:
@@ -89,10 +87,7 @@ def verify_user():
                 jwt=token,  key=JWT_SECRET_KEY, algorithms=['HS256'])
 
             presentDate = datetime.datetime.now()
-            print(payload["password"].encode('utf-8'))
-
             user = initialize_user(payload)
-            print(user)
 
             dbResponse = db.users.insert_one(user)
             payload = {'user_id': str(dbResponse.inserted_id)}
@@ -116,7 +111,6 @@ def login_user():
             raise EmptyField("Please do not leave field empty")
 
         dbResponse = db.users.find_one({"email": content["email"]})
-        print(dbResponse)
         if dbResponse == None:
             raise NotFoundErr("invalid credentials")
 
@@ -151,8 +145,6 @@ def check_user(username):
     try:
         if username == None:
             token = request.headers['Authorization']
-            print(token)
-
             if token == "":
                 raise HTTP_HEADER_MISSING("Auth-token missing")
             payload = jwt.decode(
@@ -169,8 +161,6 @@ def check_user(username):
 
             user['_id'] = str(user['_id'])
             del user["password"]
-
-            print(user["username"])
 
         friends = get_friends(user["username"])
         user["friends"] = friends
@@ -193,7 +183,6 @@ def check_user(username):
 def update_user():
     try:
         token = request.headers['Authorization']
-        print(token, "hello")
         if token == "":
             raise HTTP_HEADER_MISSING("auth-token missing")
         content = request.get_json()

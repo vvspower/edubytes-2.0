@@ -44,7 +44,6 @@ def filter_between_today_and_24h_ago(posts):
     gmt = time.gmtime()
     filtered = []
     for item in posts:
-        print(item["created"], calendar.timegm(gmt))
         if float(item["created"]) > calendar.timegm(gmt):
             filtered.append(item)
 
@@ -56,7 +55,6 @@ def filter_between_24h_ago_and_before(posts):
     gmt = time.gmtime()
     filtered = []
     for item in posts:
-        print(item["created"], calendar.timegm(gmt))
         if float(item["created"]) < calendar.timegm(gmt):
             filtered.append(item)
 
@@ -76,6 +74,5 @@ def calculate_case(today_posts, yesterday_posts, case):
         return_list = today_posts
     for item in return_list:
         item["_id"] = str(item["_id"])
-        print("HELLO")
 
     return return_list, case

@@ -19,7 +19,6 @@ def initialize_resource(content, username, pfp):
 
     gmt = time.gmtime()
 
-    print(content)
 
     resource = {
         "username": username,
