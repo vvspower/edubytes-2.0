@@ -21,14 +21,14 @@ def get_notifications():
             jwt=token,  key=JWT_SECRET_KEY, algorithms=['HS256'])
         user = db.users.find_one({"_id": ObjectId(payload["user_id"])})
         notifs = list(db_events.notifications.find(
-            {"for": user["username"]}).limit(12))
+            {"for": user["username"]}))
         for notif in notifs:
             notif["_id"] = str(notif["_id"])
         dbResponse = db_events.notifications.update_many({"for": user["username"]}, {
             "$set": {"read": True}})
 
         notifs.reverse()
-        return Response(response=json.dumps({"data": notifs, "success": True}), status=200, mimetype="application/json")
+        return Response(response=json.dumps({"data": notifs[:12], "success": True}), status=200, mimetype="application/json")
     except Exception as ex:
         print(ex)
         return Response(response=json.dumps({"data": ex.args[0], "success": False}), status=500, mimetype="application/json")

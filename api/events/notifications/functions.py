@@ -50,9 +50,8 @@ def on_create_user(username):
 
 def on_getting_reply(from_username, post_id, reply):
 
-
     text = f"{from_username} replied to your post: {textwrap.shorten(reply, width=15, placeholder='...')}"
-    redirect = f'/post?v={post_id}'
+    redirect = f'/post/{post_id}'
     for_username = db.forum.find_one({"_id": ObjectId(post_id)})["username"]
     notification = create_notification(
         for_username, from_username, text, redirect)
@@ -67,7 +66,7 @@ def on_being_mentioned(username_of_mentioner, post_id, content):
         am[name]["mentioned"] = False
 
     text = f"{username_of_mentioner} mentioned you in a comment.."
-    redirect = f'/post?v={post_id}'
+    redirect = f'/post/{post_id}'
     for username in mentioned_user:
         # checks if user is mentioned more than 1 times. so notfication is only sent 1 time not the amount of times they were mentioned in the
         if am[username]["mentioned"] == True:
@@ -91,7 +90,7 @@ def on_post_like(username, post_id, type):
     # getting the username of the person whos post was liked
     for_username = db.forum.find_one({"_id": ObjectId(post_id)})["username"]
     text = f"{username} {reaction} your post "
-    redirect = f"/post?v={post_id}"
+    redirect = f"/post/{post_id}"
     notification = create_notification(
         for_username, username,  text, redirect, type=type)
     db_events.notifications.insert_one(notification)
