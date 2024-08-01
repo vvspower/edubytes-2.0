@@ -1,5 +1,6 @@
 import os
 import sys
+# from api import db
 from api import db
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
@@ -30,7 +31,7 @@ Hi {email},
 
 We recieved your request for creating an account
 
-please click on this link to verfiy your account http://edubytes.me/verify?jwt={token}
+please click on this link to verfiy your account http://localhost:5173/verify?jwt={token}
 
 link will expire after 15 minutes
 

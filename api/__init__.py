@@ -4,7 +4,7 @@ from flask_cors import CORS
 import pymongo
 
 
-MONGO_CONNECTION_STRING = "mongodb+srv://vvspower:lenovo123@cluster-e.dfrzsfk.mongodb.net/?retryWrites=true&w=majority"
+MONGO_CONNECTION_STRING = "mongodb+srv://yourconnection string"
 
 try:
 

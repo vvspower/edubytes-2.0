@@ -1,7 +1,7 @@
-study_track_model = {
+study_track_models = {
     "$jsonSchema": {
         "bsonType": "object",
-        "required": ["username", "title", "description" "due_date", "completed", "type",  "attatchments", "created"],
+        "required": ["username", "title", "description", "due_date", "completed", "type",  "attatchments", "created"],
         "properties": {
             "username": {
                 "bsonType": "string",

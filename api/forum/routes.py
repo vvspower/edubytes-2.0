@@ -48,6 +48,7 @@ try:
     db.create_collection('forum_likes')
     db.command("collMod", "forum", validator=forum_post_model)
     db.command("collMod", "forum_replies", validator=forum_reply_model)
+    db.create_index([('content', 'text')])
 
 
 except Exception as ex:
@@ -346,6 +347,7 @@ def search_posts(query):
 
         return Response(response=json.dumps({"data": posts, "success": True}), status=200, mimetype="applcation/json")
     except Exception as ex:
+        print(ex)
         return Response(response=json.dumps({"data": ex.args[0], "success": False}), status=500, mimetype="application/json")
 
 

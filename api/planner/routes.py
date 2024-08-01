@@ -18,13 +18,13 @@ sys.path.append(os.path.abspath("../../api"))
 sys.path.append(os.path.abspath('../../main'))
 
 
-JWT_SECRET_KEY = "d445191d82cd77c696de"
+JWT_SECRET_KEY = "yoursecretkey"
 planner = Blueprint("planner", __name__)
 
 try:
-    from .models import study_track_model
+    from .models import study_track_models
+    db.command("collMod", "planner", validator=study_track_models)
     db.create_collection("planner")
-    db.command("collMod", "planner", validator=study_track_model)
 
 except Exception as ex:
     print(ex)
@@ -34,7 +34,7 @@ def upload_file(files):
     print(files)
     file_urls = []
     for file in files:
-        response = requests.post("https://script.google.com/macros/s/AKfycbzV9a3N1hN-5BZOgA8ngiQXXflR2o9gLgKgofK5gLAtmlcWvEGgirpSnk2Lo3rmjL70ug/exec", {"file": {
+        response = requests.post("scripttouploadtogoogledrivelink", {"file": {
             "data": file,
             "name": file.filename,
             "type": from_buffer(file.read(), mime=True)
